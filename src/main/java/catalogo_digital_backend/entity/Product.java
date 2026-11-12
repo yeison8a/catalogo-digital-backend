@@ -14,6 +14,13 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "products")
 public class Product {
@@ -70,6 +77,13 @@ public class Product {
     )
     private Category category;
 
+    @OneToMany(
+            mappedBy = "product",
+            fetch = FetchType.LAZY
+    )
+    @OrderBy("sortOrder ASC")
+    private List<ProductImage> images = new ArrayList<>();
+
     // Constructor requerido por JPA
     protected Product() {
     }
@@ -116,6 +130,10 @@ public class Product {
 
     public Category getCategory() {
         return category;
+    }
+
+    public List<ProductImage> getImages() {
+    return images;
     }
 
     // Setters
