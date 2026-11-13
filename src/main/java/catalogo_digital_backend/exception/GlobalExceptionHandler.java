@@ -106,6 +106,20 @@ public class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(CloudinaryDeletionException.class)
+    public ResponseEntity<Map<String, Object>> handleCloudinaryDeletion(
+            CloudinaryDeletionException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of(
+                        "status", 502,
+                        "message",
+                        "No se pudo completar la eliminación en Cloudinary."
+                ));
+    }
+
+
     // Construir una respuesta de error uniforme
     private ResponseEntity<Map<String, Object>> buildResponse(
             HttpStatus status,

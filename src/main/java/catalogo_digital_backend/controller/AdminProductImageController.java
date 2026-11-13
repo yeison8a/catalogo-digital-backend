@@ -18,6 +18,7 @@ import catalogo_digital_backend.service.ProductImageUploadService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
+import catalogo_digital_backend.service.ProductImageDeletionService;
 
 import java.net.URI;
 import java.util.List;
@@ -30,13 +31,16 @@ public class AdminProductImageController {
 
     private final ProductImageService imageService;
     private final ProductImageUploadService uploadService;
+    private final ProductImageDeletionService deletionService;
 
     public AdminProductImageController(
             ProductImageService imageService,
-            ProductImageUploadService uploadService
+            ProductImageUploadService uploadService,
+            ProductImageDeletionService deletionService
     ) {
         this.imageService = imageService;
         this.uploadService = uploadService;
+        this.deletionService = deletionService;
     }
 
 
@@ -122,7 +126,7 @@ public class AdminProductImageController {
             @PathVariable UUID imageId
     ) {
 
-        imageService.deleteImage(productId, imageId);
+        deletionService.delete(productId, imageId);
 
         return ResponseEntity.noContent().build();
     }
