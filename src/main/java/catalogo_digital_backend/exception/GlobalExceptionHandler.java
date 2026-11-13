@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -88,6 +90,21 @@ public class GlobalExceptionHandler {
                 "El cuerpo de la solicitud no contiene un JSON válido."
         );
     }
+
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleLargeFile(
+            MaxUploadSizeExceededException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of(
+                        "status", 413,
+                        "message",
+                        "La fotografía supera el tamaño máximo permitido."
+                ));
+    }
+
 
     // Construir una respuesta de error uniforme
     private ResponseEntity<Map<String, Object>> buildResponse(

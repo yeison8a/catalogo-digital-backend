@@ -228,4 +228,40 @@ public class CloudinaryImageStorageService {
             long size
     ) {
     }
+
+
+public void delete(String publicId) {
+
+    if (publicId == null || publicId.isBlank()) {
+        throw new IllegalArgumentException(
+                "El identificador de Cloudinary es obligatorio."
+        );
+    }
+
+    try {
+        Map<?, ?> result = cloudinary.uploader().destroy(
+                publicId,
+                ObjectUtils.asMap(
+                        "resource_type", "image",
+                        "invalidate", true
+                )
+        );
+
+        Object status = result.get("result");
+
+        if (!"ok".equals(status)
+                && !"not found".equals(status)) {
+            throw new IllegalStateException(
+                    "Cloudinary no confirmó la eliminación."
+            );
+        }
+
+    } catch (IOException exception) {
+        throw new IllegalStateException(
+                "No se pudo eliminar el archivo de Cloudinary.",
+                exception
+        );
+    }
+}
+
 }

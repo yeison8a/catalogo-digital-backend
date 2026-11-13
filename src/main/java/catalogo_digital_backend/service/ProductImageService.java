@@ -86,6 +86,58 @@ public class ProductImageService {
         return toResponse(saved);
     }
 
+
+// Registrar una imagen que ya fue subida a Cloudinary
+@Transactional
+public ProductImageResponse addUploadedImage(
+        UUID productId,
+        String imageUrl,
+        String cloudinaryPublicId
+) {
+    if (cloudinaryPublicId == null
+            || cloudinaryPublicId.isBlank()) {
+        throw new IllegalArgumentException(
+                "El identificador de Cloudinary es obligatorio."
+        );
+    }
+
+    // Reutilizar la validación de URL existente.
+    String validUrl = validateImageUrl(
+            new ProductImageRequest(imageUrl)
+    );
+
+    Product product = getProductOrThrow(productId);
+
+    List<ProductImage> existingImages = imageRepository
+            .findByProduct_IdOrderBySortOrderAsc(productId);
+
+    if (existingImages.size() >= MAX_IMAGES) {
+        throw new IllegalStateException(
+                "Un producto no puede tener más de 5 imágenes."
+        );
+    }
+
+    boolean isMain = existingImages.isEmpty();
+    int sortOrder = existingImages.size();
+
+    ProductImage image = new ProductImage(
+            validUrl,
+            sortOrder,
+            isMain,
+            product
+    );
+
+    image.setCloudinaryPublicId(
+            cloudinaryPublicId
+    );
+
+    ProductImage saved =
+            imageRepository.saveAndFlush(image);
+
+    return toResponse(saved);
+}
+
+
     // 3. Cambiar la imagen principal
     @Transactional
     public ProductImageResponse setMainImage(

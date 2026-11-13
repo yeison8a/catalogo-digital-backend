@@ -13,6 +13,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
+import catalogo_digital_backend.service.ProductImageUploadService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MultipartFile;
+
+
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -23,12 +29,35 @@ import java.util.UUID;
 public class AdminProductImageController {
 
     private final ProductImageService imageService;
+    private final ProductImageUploadService uploadService;
 
     public AdminProductImageController(
-            ProductImageService imageService
+            ProductImageService imageService,
+            ProductImageUploadService uploadService
     ) {
         this.imageService = imageService;
+        this.uploadService = uploadService;
     }
+
+
+    // Subir una fotografía real a Cloudinary
+    @PostMapping(
+            value = "/upload",
+            consumes = "multipart/form-data"
+    )
+    public ResponseEntity<ProductImageResponse> uploadImage(
+            @PathVariable UUID productId,
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        ProductImageResponse created =
+                uploadService.upload(productId, file);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(created);
+    }
+
 
     // 1. Consultar todas las imágenes del producto
     @GetMapping

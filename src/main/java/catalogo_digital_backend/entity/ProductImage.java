@@ -33,6 +33,13 @@ public class ProductImage {
     )
     private String imageUrl;
 
+
+    @Column(
+            name = "cloudinary_public_id",
+            length = 255
+    )
+    private String cloudinaryPublicId;
+
     @Column(
             name = "sort_order",
             nullable = false
@@ -111,4 +118,15 @@ public class ProductImage {
     public void setProduct(Product product) {
         this.product = product;
     }
+
+
+    public String getCloudinaryPublicId() {
+        return cloudinaryPublicId;
+    }
+
+    public void setCloudinaryPublicId(String cloudinaryPublicId) {
+        this.cloudinaryPublicId = cloudinaryPublicId;
+    }
+
 }
+
