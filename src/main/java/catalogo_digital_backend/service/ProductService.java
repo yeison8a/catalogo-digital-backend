@@ -3,10 +3,14 @@ package catalogo_digital_backend.service;
 
 import catalogo_digital_backend.dto.product.ProductRequest;
 import catalogo_digital_backend.dto.product.ProductResponse;
+
 import catalogo_digital_backend.entity.Category;
 import catalogo_digital_backend.entity.Product;
+import catalogo_digital_backend.entity.ProductImage;
+
 import catalogo_digital_backend.repository.CategoryRepository;
 import catalogo_digital_backend.repository.ProductRepository;
+import catalogo_digital_backend.repository.ProductImageRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +19,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -26,66 +33,71 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductImageRepository imageRepository;
 
     public ProductService(
             ProductRepository productRepository,
-            CategoryRepository categoryRepository
+            CategoryRepository categoryRepository,
+            ProductImageRepository imageRepository
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.imageRepository = imageRepository;
     }
 
-    // 1. Consultar todos los productos (administración)
+    // 1. Consultar todos los productos: administración
     @Transactional(readOnly = true)
     public List<ProductResponse> findAll() {
-        return productRepository.findAll()
-                .stream()
-                .sorted(
-                        Comparator.comparing(
-                                Product::getName,
-                                String.CASE_INSENSITIVE_ORDER
-                        )
-                )
-                .map(this::toResponse)
-                .toList();
+        List<Product> products = productRepository.findAll();
+
+        return toResponses(products);
     }
 
-    // 2. Consultar productos visibles públicamente
+    // 2. Consultar productos publicados y categorías activas
     @Transactional(readOnly = true)
     public List<ProductResponse> findPublished() {
-        return productRepository.findByActiveTrue()
+        List<Product> products = productRepository
+                .findByActiveTrue()
                 .stream()
                 .filter(product ->
                         product.getCategory().isActive()
                 )
-                .sorted(
-                        Comparator.comparing(
-                                Product::getName,
-                                String.CASE_INSENSITIVE_ORDER
-                        )
-                )
-                .map(this::toResponse)
                 .toList();
+
+        return toResponses(products);
     }
 
-    // 3. Buscar un producto por su ID (administración)
+    // 3. Buscar producto para administración
     @Transactional(readOnly = true)
     public ProductResponse findById(UUID id) {
         return toResponse(getProductOrThrow(id));
     }
 
-    // 4. Crear un producto
+    // 4. Buscar un producto públicamente
+    @Transactional(readOnly = true)
+    public ProductResponse findPublishedById(UUID id) {
+        Product product = getProductOrThrow(id);
+
+        if (!product.isActive()
+                || !product.getCategory().isActive()) {
+            throw new NoSuchElementException(
+                    "No existe un producto público con ID: " + id
+            );
+        }
+
+        return toResponse(product);
+    }
+
+    // 5. Crear producto
     @Transactional
     public ProductResponse create(ProductRequest request) {
         String name = validateName(request);
-        String description = validateDescription(
-                request.description()
-        );
+        String description =
+                validateDescription(request.description());
         BigDecimal price = validatePrice(request.price());
 
-        Category category = getActiveCategory(
-                request.categoryId()
-        );
+        Category category =
+                getActiveCategory(request.categoryId());
 
         Product product = new Product(
                 name,
@@ -100,7 +112,7 @@ public class ProductService {
         return toResponse(saved);
     }
 
-    // 5. Editar los datos principales
+    // 6. Actualizar datos del producto
     @Transactional
     public ProductResponse update(
             UUID id,
@@ -109,17 +121,13 @@ public class ProductService {
         Product product = getProductOrThrow(id);
 
         String name = validateName(request);
-        String description = validateDescription(
-                request.description()
-        );
+        String description =
+                validateDescription(request.description());
         BigDecimal price = validatePrice(request.price());
 
-        Category category = getCategoryOrThrow(
-                request.categoryId()
-        );
+        Category category =
+                getCategoryOrThrow(request.categoryId());
 
-        // Un producto publicado debe pertenecer
-        // a una categoría activa.
         if (product.isActive() && !category.isActive()) {
             throw new IllegalStateException(
                     "No se puede asignar una categoría inactiva " +
@@ -138,14 +146,13 @@ public class ProductService {
         return toResponse(saved);
     }
 
-    // 6. Cambiar disponibilidad (agotado/disponible)
+    // 7. Cambiar disponibilidad
     @Transactional
     public ProductResponse updateAvailability(
             UUID id,
             boolean available
     ) {
         Product product = getProductOrThrow(id);
-
         product.setAvailable(available);
 
         return toResponse(
@@ -153,7 +160,7 @@ public class ProductService {
         );
     }
 
-    // 7. Publicar u ocultar un producto
+    // 8. Publicar u ocultar
     @Transactional
     public ProductResponse updatePublication(
             UUID id,
@@ -175,27 +182,87 @@ public class ProductService {
         );
     }
 
+    // 9. Convertir un listado a DTOs eficientemente
+    private List<ProductResponse> toResponses(
+            List<Product> products
+    ) {
+        if (products.isEmpty()) {
+            return List.of();
+        }
 
-@Transactional(readOnly = true)
-public ProductResponse findPublishedById(UUID id) {
+        // Recolectar los IDs de los productos
+        List<UUID> productIds = products.stream()
+                .map(Product::getId)
+                .toList();
 
-    // Reutilizar la consulta existente
-    Product product = getProductOrThrow(id);
+        // Una consulta para todas las imágenes principales
+        List<ProductImage> mainImages = imageRepository
+                .findByProduct_IdInAndMainImageTrue(productIds);
 
-    // Comprobar que el producto y su categoría
-    // estén publicados/activos
-    if (!product.isActive()
-            || !product.getCategory().isActive()) {
+        // Relacionar cada producto con su URL principal
+        Map<UUID, String> mainImageUrls = mainImages.stream()
+                .collect(
+                        Collectors.toMap(
+                                image -> image.getProduct().getId(),
+                                ProductImage::getImageUrl,
+                                (first, second) -> {
+                                    throw new IllegalStateException(
+                                            "Un producto tiene más de " +
+                                            "una imagen principal."
+                                    );
+                                }
+                        )
+                );
 
-        throw new NoSuchElementException(
-                "No existe un producto público con ID: " + id
+        // Convertir los productos usando el mapa
+        return products.stream()
+                .sorted(
+                        Comparator.comparing(
+                                Product::getName,
+                                String.CASE_INSENSITIVE_ORDER
+                        )
+                )
+                .map(product -> toResponse(
+                        product,
+                        mainImageUrls.get(product.getId())
+                ))
+                .toList();
+    }
+
+    // 10. Convertir un producto individual
+    private ProductResponse toResponse(Product product) {
+
+        String mainImageUrl = imageRepository
+                .findByProduct_IdAndMainImageTrue(
+                        product.getId()
+                )
+                .map(ProductImage::getImageUrl)
+                .orElse(null);
+
+        return toResponse(product, mainImageUrl);
+    }
+
+    // 11. Construir ProductResponse
+    private ProductResponse toResponse(
+            Product product,
+            String mainImageUrl
+    ) {
+        Category category = product.getCategory();
+
+        return new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.isAvailable(),
+                product.isActive(),
+                category.getId(),
+                category.getName(),
+                mainImageUrl
         );
     }
 
-    return toResponse(product);
-}
-
-    // 8. Buscar producto existente
+    // 12. Buscar producto
     private Product getProductOrThrow(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException(
@@ -211,7 +278,7 @@ public ProductResponse findPublishedById(UUID id) {
                 );
     }
 
-    // 9. Buscar categoría existente
+    // 13. Buscar categoría
     private Category getCategoryOrThrow(UUID categoryId) {
         if (categoryId == null) {
             throw new IllegalArgumentException(
@@ -228,7 +295,7 @@ public ProductResponse findPublishedById(UUID id) {
                 );
     }
 
-    // 10. Obtener categoría activa
+    // 14. Verificar categoría activa
     private Category getActiveCategory(UUID categoryId) {
         Category category = getCategoryOrThrow(categoryId);
 
@@ -242,7 +309,7 @@ public ProductResponse findPublishedById(UUID id) {
         return category;
     }
 
-    // 11. Validar el nombre
+    // 15. Validar nombre
     private String validateName(ProductRequest request) {
         if (request == null || request.name() == null) {
             throw new IllegalArgumentException(
@@ -261,7 +328,7 @@ public ProductResponse findPublishedById(UUID id) {
         return name;
     }
 
-    // 12. Validar descripción
+    // 16. Validar descripción
     private String validateDescription(String description) {
         if (description == null) {
             return null;
@@ -278,7 +345,7 @@ public ProductResponse findPublishedById(UUID id) {
         return cleaned.isEmpty() ? null : cleaned;
     }
 
-    // 13. Validar y normalizar precio
+    // 17. Validar precio
     private BigDecimal validatePrice(BigDecimal price) {
         if (price == null) {
             throw new IllegalArgumentException(
@@ -305,25 +372,9 @@ public ProductResponse findPublishedById(UUID id) {
             );
         } catch (ArithmeticException exception) {
             throw new IllegalArgumentException(
-                    "El precio no puede tener más de 2 decimales significativos."
+                    "El precio no puede tener más de " +
+                    "2 decimales significativos."
             );
         }
-    }
-
-    // 14. Convertir entidad a DTO
-    private ProductResponse toResponse(Product product) {
-        Category category = product.getCategory();
-
-        return new ProductResponse(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.isAvailable(),
-                product.isActive(),
-                category.getId(),
-                category.getName(),
-                null // La imagen principal se implementará después
-        );
     }
 }
