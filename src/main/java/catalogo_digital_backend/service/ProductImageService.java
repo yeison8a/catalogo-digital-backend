@@ -55,7 +55,7 @@ public class ProductImageService {
             UUID productId,
             ProductImageRequest request
     ) {
-        Product product = getProductOrThrow(productId);
+        Product product = lockProductOrThrow(productId);
         String imageUrl = validateImageUrl(request);
 
         List<ProductImage> existingImages = imageRepository
@@ -106,7 +106,7 @@ public ProductImageResponse addUploadedImage(
             new ProductImageRequest(imageUrl)
     );
 
-    Product product = getProductOrThrow(productId);
+    Product product = lockProductOrThrow(productId);
 
     List<ProductImage> existingImages = imageRepository
             .findByProduct_IdOrderBySortOrderAsc(productId);
@@ -139,16 +139,22 @@ public ProductImageResponse addUploadedImage(
 
 
     // 3. Cambiar la imagen principal
+
     @Transactional
     public ProductImageResponse setMainImage(
             UUID productId,
             UUID imageId
     ) {
-        getProductOrThrow(productId);
 
+        // 1. Bloquear el producto.
+        lockProductOrThrow(productId);
+
+        // 2. Recuperar sus fotografías.
         List<ProductImage> images = imageRepository
                 .findByProduct_IdOrderBySortOrderAsc(productId);
 
+        // 3. Comprobar que la fotografía seleccionada
+        // realmente pertenece a este producto.
         ProductImage selected = images.stream()
                 .filter(image -> image.getId().equals(imageId))
                 .findFirst()
@@ -158,17 +164,32 @@ public ProductImageResponse addUploadedImage(
                         )
                 );
 
-        // Solo la seleccionada queda como principal.
-        for (ProductImage image : images) {
-            image.setMainImage(
-                    image.getId().equals(imageId)
-            );
+        // 4. Si ya es la única principal, no cambiar nada.
+        long currentMainCount = images.stream()
+                .filter(ProductImage::isMainImage)
+                .count();
+
+        if (selected.isMainImage() && currentMainCount == 1) {
+            return toResponse(selected);
         }
 
+        // 5. Desmarcar las imágenes principales anteriores.
+        for (ProductImage image : images) {
+            image.setMainImage(false);
+        }
+
+        // Confirmar las actualizaciones SQL dentro
+        // de la transacción actual.
         imageRepository.saveAllAndFlush(images);
+
+        // 6. Marcar la nueva principal.
+        selected.setMainImage(true);
+
+        imageRepository.saveAndFlush(selected);
 
         return toResponse(selected);
     }
+
 
     // 4. Cambiar el orden de las imágenes
     @Transactional
@@ -176,7 +197,7 @@ public ProductImageResponse addUploadedImage(
             UUID productId,
             List<UUID> orderedImageIds
     ) {
-        getProductOrThrow(productId);
+        lockProductOrThrow(productId);
 
         List<ProductImage> images = imageRepository
                 .findByProduct_IdOrderBySortOrderAsc(productId);
@@ -228,7 +249,7 @@ public ProductImageResponse addUploadedImage(
             UUID productId,
             UUID imageId
     ) {
-        getProductOrThrow(productId);
+        lockProductOrThrow(productId);
 
         ProductImage image = getImageOrThrow(
                 productId,
@@ -281,6 +302,25 @@ public ProductImageResponse addUploadedImage(
                         )
                 );
     }
+
+
+    private Product lockProductOrThrow(UUID productId) {
+
+        if (productId == null) {
+            throw new IllegalArgumentException(
+                    "El identificador del producto es obligatorio."
+            );
+        }
+
+        return productRepository
+                .findByIdForUpdate(productId)
+                .orElseThrow(
+                        () -> new NoSuchElementException(
+                                "No existe un producto con ID: " + productId
+                        )
+                );
+    }
+
 
     // Buscar una imagen y comprobar su propietario
     private ProductImage getImageOrThrow(
