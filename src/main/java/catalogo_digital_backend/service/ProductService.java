@@ -175,6 +175,26 @@ public class ProductService {
         );
     }
 
+
+@Transactional(readOnly = true)
+public ProductResponse findPublishedById(UUID id) {
+
+    // Reutilizar la consulta existente
+    Product product = getProductOrThrow(id);
+
+    // Comprobar que el producto y su categoría
+    // estén publicados/activos
+    if (!product.isActive()
+            || !product.getCategory().isActive()) {
+
+        throw new NoSuchElementException(
+                "No existe un producto público con ID: " + id
+        );
+    }
+
+    return toResponse(product);
+}
+
     // 8. Buscar producto existente
     private Product getProductOrThrow(UUID id) {
         if (id == null) {
