@@ -10,9 +10,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 import java.util.UUID;
 
+@Tag(
+    name = "Fotografías públicas",
+    description = "Consulta de fotografías visibles de productos"
+)
 @RestController
 @RequestMapping("/api/v1/products/{productId}/images")
 public class ProductImageController {

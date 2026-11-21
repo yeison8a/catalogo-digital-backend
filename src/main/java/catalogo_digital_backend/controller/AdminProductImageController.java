@@ -20,10 +20,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import catalogo_digital_backend.service.ProductImageDeletionService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(
+    name = "Administración de fotografías",
+    description = "Subida a Cloudinary, orden, imagen principal y eliminaciones"
+)
 @RestController
 @Profile("local")
 @RequestMapping("/api/v1/admin/products/{productId}/images")
@@ -43,6 +51,40 @@ public class AdminProductImageController {
         this.deletionService = deletionService;
     }
 
+
+@Operation(
+    summary = "Subir una fotografía a Cloudinary",
+    description = """
+            Recibe una imagen JPEG o PNG mediante multipart/form-data.
+
+            Reglas:
+            - Tamaño máximo: 5 MiB.
+            - Máximo cinco fotografías por producto.
+            - La primera fotografía será la principal.
+            - Se almacena el archivo en Cloudinary.
+            - Se guarda su referencia en PostgreSQL.
+            """
+)
+@ApiResponse(
+    responseCode = "201",
+    description = "Fotografía almacenada correctamente"
+)
+@ApiResponse(
+    responseCode = "400",
+    description = "Archivo inválido"
+)
+@ApiResponse(
+    responseCode = "404",
+    description = "Producto inexistente"
+)
+@ApiResponse(
+    responseCode = "409",
+    description = "El producto ya tiene cinco fotografías"
+)
+@ApiResponse(
+    responseCode = "413",
+    description = "El archivo supera el tamaño permitido"
+)
 
     // Subir una fotografía real a Cloudinary
     @PostMapping(
@@ -119,8 +161,29 @@ public class AdminProductImageController {
         );
     }
 
+
+@Operation(
+    summary = "Solicitar eliminación de fotografía",
+    description = """
+            Registra una solicitud de eliminación.
+
+            La fotografía se marca como pendiente y un proceso
+            automático intenta eliminarla de Cloudinary y PostgreSQL.
+
+            La respuesta 202 indica que la solicitud fue aceptada,
+            no que el archivo ya fue eliminado.
+            """
+)
+@ApiResponse(
+    responseCode = "202",
+    description = "Solicitud de eliminación registrada"
+)
+@ApiResponse(
+    responseCode = "404",
+    description = "Producto o fotografía inexistente"
+)
+
     // 5. Eliminar una imagen
-    
 @DeleteMapping("/{imageId}")
 public ResponseEntity<Void> deleteImage(
         @PathVariable UUID productId,

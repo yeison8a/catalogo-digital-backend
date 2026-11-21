@@ -13,10 +13,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(
+    name = "Administración de categorías",
+    description = "Creación, edición y activación de categorías"
+)
 @RestController
 @Profile("local")
 @RequestMapping("/api/v1/admin/categories")

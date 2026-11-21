@@ -14,10 +14,16 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(
+    name = "Administración de productos",
+    description = "Creación, edición, publicación y disponibilidad"
+)
 @RestController
 @Profile("local")
 @RequestMapping("/api/v1/admin/products")
