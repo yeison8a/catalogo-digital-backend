@@ -62,6 +62,17 @@ public class ProductImage {
     )
     private Product product;
 
+
+    @Column(name = "deletion_pending", nullable = false)
+    private boolean deletionPending = false;
+
+    public boolean isDeletionPending() {
+        return deletionPending;
+    }
+
+    public void setDeletionPending(boolean deletionPending) {
+        this.deletionPending = deletionPending;
+    }
     // Constructor requerido por JPA
     protected ProductImage() {
     }

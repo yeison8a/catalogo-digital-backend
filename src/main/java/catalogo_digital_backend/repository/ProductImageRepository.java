@@ -30,4 +30,24 @@ public interface ProductImageRepository
 
     // Contar fotografías de un producto
     long countByProduct_Id(UUID productId);
+
+
+// Imágenes visibles de un producto
+List<ProductImage>
+findByProduct_IdAndDeletionPendingFalseOrderBySortOrderAsc(
+        UUID productId
+);
+
+// Imagen principal visible de un producto
+Optional<ProductImage>
+findByProduct_IdAndMainImageTrueAndDeletionPendingFalse(
+        UUID productId
+);
+
+// Imágenes principales visibles de varios productos
+List<ProductImage>
+findByProduct_IdInAndMainImageTrueAndDeletionPendingFalse(
+        Collection<UUID> productIds
+);
+
 }

@@ -197,7 +197,7 @@ public class ProductService {
 
         // Una consulta para todas las imágenes principales
         List<ProductImage> mainImages = imageRepository
-                .findByProduct_IdInAndMainImageTrue(productIds);
+                .findByProduct_IdInAndMainImageTrueAndDeletionPendingFalse(productIds);
 
         // Relacionar cada producto con su URL principal
         Map<UUID, String> mainImageUrls = mainImages.stream()
@@ -233,7 +233,7 @@ public class ProductService {
     private ProductResponse toResponse(Product product) {
 
         String mainImageUrl = imageRepository
-                .findByProduct_IdAndMainImageTrue(
+                .findByProduct_IdAndMainImageTrueAndDeletionPendingFalse(
                         product.getId()
                 )
                 .map(ProductImage::getImageUrl)

@@ -38,6 +38,6 @@ public class ProductImageController {
         // o pertenecientes a categorías inactivas.
         productService.findPublishedById(productId);
 
-        return imageService.findByProduct(productId);
+        return imageService.findPublicByProduct(productId);
     }
 }

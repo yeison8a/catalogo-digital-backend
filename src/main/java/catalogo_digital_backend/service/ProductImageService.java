@@ -35,6 +35,24 @@ public class ProductImageService {
         this.productRepository = productRepository;
     }
 
+
+
+@Transactional(readOnly = true)
+public List<ProductImageResponse> findPublicByProduct(
+        UUID productId
+) {
+    getProductOrThrow(productId);
+
+    return imageRepository
+            .findByProduct_IdAndDeletionPendingFalseOrderBySortOrderAsc(
+                    productId
+            )
+            .stream()
+            .map(this::toResponse)
+            .toList();
+}
+
+
     // 1. Consultar las imágenes de un producto
     @Transactional(readOnly = true)
     public List<ProductImageResponse> findByProduct(
@@ -186,6 +204,7 @@ public ProductImageResponse addUploadedImage(
         selected.setMainImage(true);
 
         imageRepository.saveAndFlush(selected);
+        ensureNoPendingDeletions(images);
 
         return toResponse(selected);
     }
@@ -239,6 +258,7 @@ public ProductImageResponse addUploadedImage(
         }
 
         imageRepository.saveAllAndFlush(images);
+        ensureNoPendingDeletions(images);
 
         return findByProduct(productId);
     }
@@ -404,4 +424,21 @@ public ProductImageResponse addUploadedImage(
                 image.getProduct().getId()
         );
     }
+
+
+private void ensureNoPendingDeletions(
+        List<ProductImage> images
+) {
+    boolean pending = images.stream()
+            .anyMatch(ProductImage::isDeletionPending);
+
+    if (pending) {
+        throw new IllegalStateException(
+                "La galería tiene una eliminación pendiente. "
+                + "Intenta nuevamente cuando termine."
+        );
+    }
+}
+
+
 }

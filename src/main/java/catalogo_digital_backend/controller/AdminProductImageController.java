@@ -120,14 +120,21 @@ public class AdminProductImageController {
     }
 
     // 5. Eliminar una imagen
-    @DeleteMapping("/{imageId}")
-    public ResponseEntity<Void> deleteImage(
-            @PathVariable UUID productId,
-            @PathVariable UUID imageId
-    ) {
+    
+@DeleteMapping("/{imageId}")
+public ResponseEntity<Void> deleteImage(
+        @PathVariable UUID productId,
+        @PathVariable UUID imageId
+) {
 
-        deletionService.delete(productId, imageId);
+    deletionService.requestDeletion(
+            productId,
+            imageId
+    );
 
-        return ResponseEntity.noContent().build();
-    }
+    return ResponseEntity
+            .accepted()
+            .build();
+}
+
 }
