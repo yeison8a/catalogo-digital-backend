@@ -75,6 +75,12 @@
 			<version>2.6.0</version>
 		</dependency>
 
+		<!-- Seguridad y autorización de endpoints -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
 
 <!-- Swagger UI y OpenAPI 3 -->
 <dependency>
