@@ -132,4 +132,36 @@ assertEquals(
             () -> new JwtService(shortSecret)
         );
     }
+
+
+@Test
+void shouldExposeDecoderForSpringSecurity() {
+    UUID userId = UUID.randomUUID();
+
+    String token = jwtService.generateToken(
+        userId,
+        "admin@example.com",
+        Role.ADMIN
+    );
+
+    Jwt decodedJwt = jwtService
+        .getDecoder()
+        .decode(token);
+
+    assertEquals(
+        userId.toString(),
+        decodedJwt.getSubject()
+    );
+
+    assertEquals(
+        "ADMIN",
+        decodedJwt.getClaimAsString("role")
+    );
+
+    assertEquals(
+        "https://catalogo-digital.local",
+        decodedJwt.getIssuer().toString()
+    );
+}
+
 }

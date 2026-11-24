@@ -132,6 +132,16 @@ private static final String ISSUER =
         return decoder.decode(token);
     }
 
+
+/**
+ * Permite reutilizar el mismo validador JWT
+ * desde Spring Security Resource Server.
+ */
+public JwtDecoder getDecoder() {
+    return decoder;
+}
+
+
 /**
  * Devuelve la duración del JWT en segundos.
  */

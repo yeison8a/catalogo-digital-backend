@@ -8,12 +8,18 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+
+
 @Configuration
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
+            HttpSecurity http,
+            ObjectProvider<JwtDecoder> jwtDecoderProvider
     ) throws Exception {
 
         http
@@ -79,6 +85,21 @@ public class SecurityConfig {
                 .anyRequest()
                 .denyAll()
             );
+
+
+// Activar la validación Bearer JWT únicamente
+// cuando exista un JwtDecoder configurado.
+JwtDecoder jwtDecoder =
+    jwtDecoderProvider.getIfAvailable();
+
+if (jwtDecoder != null) {
+    http.oauth2ResourceServer(oauth2 ->
+        oauth2.jwt(jwt ->
+            jwt.decoder(jwtDecoder)
+        )
+    );
+}
+
 
         return http.build();
     }

@@ -88,7 +88,11 @@
     <artifactId>spring-security-oauth2-jose</artifactId>
 </dependency>
 
-
+<!-- Validación de tokens Bearer en las peticiones HTTP -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+</dependency>
 
 <!-- Swagger UI y OpenAPI 3 -->
 <dependency>
