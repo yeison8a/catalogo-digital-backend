@@ -13,13 +13,18 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 
 
+import catalogo_digital_backend.security.AdminJwtAuthenticationConverter;
+
+
 @Configuration
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            ObjectProvider<JwtDecoder> jwtDecoderProvider
+            ObjectProvider<JwtDecoder> jwtDecoderProvider,
+        ObjectProvider<AdminJwtAuthenticationConverter>
+                adminConverterProvider
     ) throws Exception {
 
         http
@@ -53,7 +58,7 @@ public class SecurityConfig {
                 // Bloquear temporalmente toda administración.
                 // Después exigiremos el rol ADMIN con JWT.
                 .requestMatchers("/api/v1/admin/**")
-                .denyAll()
+                .hasRole("ADMIN")
 
                 // Catálogo público: solo consultas.
                 .requestMatchers(
@@ -87,20 +92,25 @@ public class SecurityConfig {
             );
 
 
-// Activar la validación Bearer JWT únicamente
-// cuando exista un JwtDecoder configurado.
+// Recuperar los componentes JWT si están configurados.
 JwtDecoder jwtDecoder =
     jwtDecoderProvider.getIfAvailable();
 
-if (jwtDecoder != null) {
+AdminJwtAuthenticationConverter adminConverter =
+    adminConverterProvider.getIfAvailable();
+
+// Activar autenticación Bearer solo cuando
+// estén disponibles ambos componentes.
+if (jwtDecoder != null && adminConverter != null) {
+
     http.oauth2ResourceServer(oauth2 ->
-        oauth2.jwt(jwt ->
-            jwt.decoder(jwtDecoder)
+        oauth2.jwt(jwt -> jwt
+            .decoder(jwtDecoder)
+            .jwtAuthenticationConverter(adminConverter)
         )
     );
 }
 
-
-        return http.build();
+return http.build();
     }
 }
