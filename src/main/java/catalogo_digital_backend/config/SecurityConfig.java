@@ -36,6 +36,14 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
+                // Permitir la verificación de credenciales.
+// El controlador existe solo con el perfil local.
+.requestMatchers(
+    HttpMethod.POST,
+    "/api/v1/auth/login"
+)
+.permitAll()
+
                 // Bloquear temporalmente toda administración.
                 // Después exigiremos el rol ADMIN con JWT.
                 .requestMatchers("/api/v1/admin/**")
