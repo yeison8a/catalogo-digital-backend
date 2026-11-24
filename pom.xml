@@ -82,6 +82,14 @@
 </dependency>
 
 
+<!-- Generación y validación de tokens JWT -->
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-oauth2-jose</artifactId>
+</dependency>
+
+
+
 <!-- Swagger UI y OpenAPI 3 -->
 <dependency>
     <groupId>org.springdoc</groupId>
