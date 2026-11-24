@@ -2,13 +2,15 @@
 package catalogo_digital_backend.dto.auth;
 
 /**
- * Respuesta temporal de verificación
- * de credenciales.
+ * Resultado de la autenticación.
  *
- * El JWT se incorporará posteriormente.
+ * No incluye contraseñas ni hashes.
  */
 public record LoginResponse(
     boolean authenticated,
-    String message
+    String message,
+    String accessToken,
+    String tokenType,
+    long expiresIn
 ) {
 }

@@ -131,4 +131,12 @@ private static final String ISSUER =
     public Jwt validateToken(String token) {
         return decoder.decode(token);
     }
+
+/**
+ * Devuelve la duración del JWT en segundos.
+ */
+public long getExpiresInSeconds() {
+    return TOKEN_DURATION.toSeconds();
+}
+
 }

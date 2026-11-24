@@ -1,6 +1,7 @@
 
 package catalogo_digital_backend.security;
 
+import catalogo_digital_backend.entity.Role;
 import catalogo_digital_backend.entity.User;
 import catalogo_digital_backend.repository.UserRepository;
 
@@ -10,10 +11,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Comprueba las credenciales de administradores
- * almacenados en PostgreSQL.
- *
- * Todavía no genera sesiones ni JWT.
+ * Autenticación de administradores contra PostgreSQL.
  */
 @Service
 public class AdminAuthenticationService {
@@ -29,13 +27,19 @@ public class AdminAuthenticationService {
         this.passwordService = passwordService;
     }
 
-    public boolean verifyCredentials(
+    /**
+     * Devuelve un usuario únicamente si:
+     * - El correo existe.
+     * - La cuenta está activa.
+     * - Tiene el rol ADMIN.
+     * - La contraseña coincide con BCrypt.
+     */
+    public Optional<User> authenticate(
             String email,
             String password
     ) {
-        // Rechazar datos ausentes o inválidos.
         if (email == null || password == null) {
-            return false;
+            return Optional.empty();
         }
 
         String normalizedEmail = email
@@ -47,31 +51,50 @@ public class AdminAuthenticationService {
             normalizedEmail.length() > 254 ||
             password.isEmpty()
         ) {
-            return false;
+            return Optional.empty();
         }
 
-        // Consultar el usuario real.
         Optional<User> optionalUser =
             userRepository.findByEmailIgnoreCase(
                 normalizedEmail
             );
 
         if (optionalUser.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
 
         User user = optionalUser.get();
 
-        // Una cuenta desactivada no puede entrar.
         if (!user.isActive()) {
-            return false;
+            return Optional.empty();
         }
 
-        // Comparar la contraseña ingresada
-        // con el hash BCrypt de PostgreSQL.
-        return passwordService.verifyPassword(
-            password,
-            user.getPasswordHash()
-        );
+        if (user.getRole() != Role.ADMIN) {
+            return Optional.empty();
+        }
+
+        boolean validPassword =
+            passwordService.verifyPassword(
+                password,
+                user.getPasswordHash()
+            );
+
+        if (!validPassword) {
+            return Optional.empty();
+        }
+
+        return Optional.of(user);
+    }
+
+    /**
+     * Conservamos este método para no romper
+     * las pruebas existentes del paso 45.3.2.
+     */
+    public boolean verifyCredentials(
+            String email,
+            String password
+    ) {
+        return authenticate(email, password)
+            .isPresent();
     }
 }
