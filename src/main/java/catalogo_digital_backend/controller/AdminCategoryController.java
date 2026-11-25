@@ -24,7 +24,7 @@ import java.util.UUID;
     description = "Creación, edición y activación de categorías"
 )
 @RestController
-@Profile("local")
+@Profile({"local", "prod"})
 @RequestMapping("/api/v1/admin/categories")
 public class AdminCategoryController {
 

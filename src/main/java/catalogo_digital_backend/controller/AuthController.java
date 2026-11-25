@@ -25,7 +25,7 @@ import java.util.Optional;
  * en el perfil local y con una clave JWT configurada.
  */
 @RestController
-@Profile("local")
+@Profile({"local", "prod"})
 @ConditionalOnProperty(
     name = "app.jwt.secret-base64"
 )

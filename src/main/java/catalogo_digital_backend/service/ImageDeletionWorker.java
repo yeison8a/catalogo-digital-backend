@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@Profile("local")
+@Profile({"local", "prod"})
 @ConditionalOnProperty(
         name = "app.image-deletion.enabled",
         havingValue = "true"

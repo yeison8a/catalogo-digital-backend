@@ -16,7 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
-@Profile("local")
+@Profile({"local", "prod"})
 public class ProductImageDeletionService {
 
     private final ProductRepository productRepository;

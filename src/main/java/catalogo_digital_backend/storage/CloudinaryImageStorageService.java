@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-@Profile("local")
+@Profile({"local", "prod"})
 public class CloudinaryImageStorageService {
 
     private static final long MAX_FILE_SIZE =

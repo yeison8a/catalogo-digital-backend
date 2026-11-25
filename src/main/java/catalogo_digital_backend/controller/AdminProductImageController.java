@@ -33,7 +33,7 @@ import java.util.UUID;
     description = "Subida a Cloudinary, orden, imagen principal y eliminaciones"
 )
 @RestController
-@Profile("local")
+@Profile({"local", "prod"})
 @RequestMapping("/api/v1/admin/products/{productId}/images")
 public class AdminProductImageController {
 

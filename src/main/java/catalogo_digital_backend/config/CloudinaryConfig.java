@@ -11,15 +11,30 @@ import org.springframework.context.annotation.Profile;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Configuración de Cloudinary.
+ *
+ * Disponible en:
+ * - local: desarrollo
+ * - prod: producción
+ *
+ * Las credenciales se obtienen de las
+ * propiedades del perfil activo.
+ */
 @Configuration
-@Profile("local")
+@Profile({"local", "prod"})
 public class CloudinaryConfig {
 
     @Bean
     public Cloudinary cloudinary(
-            @Value("${app.cloudinary.cloud-name}") String cloudName,
-            @Value("${app.cloudinary.api-key}") String apiKey,
-            @Value("${app.cloudinary.api-secret}") String apiSecret
+        @Value("${app.cloudinary.cloud-name}")
+        String cloudName,
+
+        @Value("${app.cloudinary.api-key}")
+        String apiKey,
+
+        @Value("${app.cloudinary.api-secret}")
+        String apiSecret
     ) {
 
         Map<String, Object> config = new HashMap<>();

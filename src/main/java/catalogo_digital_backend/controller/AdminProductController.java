@@ -25,7 +25,7 @@ import java.util.UUID;
     description = "Creación, edición, publicación y disponibilidad"
 )
 @RestController
-@Profile("local")
+@Profile({"local", "prod"})
 @RequestMapping("/api/v1/admin/products")
 public class AdminProductController {
 
